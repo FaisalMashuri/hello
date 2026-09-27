@@ -1,7 +1,7 @@
 pipeline {
   agent any
   environment {
-    IMAGE = "ghcr.io/FaisalMashuri/hello"
+    IMAGE = "ghcr.io/faisalmashuri/hello"
   }
   stages {
     stage('Prepare') {
