@@ -1,0 +1,41 @@
+pipeline {
+  agent any
+  environment {
+    IMAGE = "ghcr.io/FaisalMashuri/hello"
+  }
+  stages {
+    stage('Prepare') {
+      steps {
+        script { env.TAG = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim() }
+      }
+    }
+    stage('Build') {
+      steps { sh 'docker build -t $IMAGE:$TAG .' }
+    }
+    stage('Push') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'ghcr', usernameVariable: 'GH_USER', passwordVariable: 'GH_TOKEN')]) {
+          sh '''
+            echo "$GH_TOKEN" | docker login ghcr.io -u "$GH_USER" --password-stdin
+            docker push $IMAGE:$TAG
+            docker logout ghcr.io
+          '''
+        }
+      }
+    }
+    stage('Deploy') {
+      steps {
+        sh '''
+          helm upgrade --install hello ./chart \
+            -n apps --create-namespace \
+            --set image.repository=$IMAGE \
+            --set image.tag=$TAG \
+            --wait --timeout 3m
+        '''
+      }
+    }
+  }
+  post {
+    always { sh 'docker image prune -f' }
+  }
+}
