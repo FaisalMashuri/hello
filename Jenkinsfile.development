@@ -28,6 +28,7 @@ pipeline {
         sh '''
           helm upgrade --install hello ./chart \
             -n apps --create-namespace \
+            -f ./chart/values.development.yaml \
             --set image.repository=$IMAGE \
             --set image.tag=$TAG \
             --wait --timeout 3m
